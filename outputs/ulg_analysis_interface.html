@@ -1,0 +1,675 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚁 ULG File Analysis Section</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2E8B57 0%, #3CB371 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .upload-section {
+            padding: 40px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .upload-area {
+            border: 3px dashed #2E8B57;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            background: white;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .upload-area:hover {
+            border-color: #3CB371;
+            background: #f0fff4;
+        }
+        
+        .upload-area.dragover {
+            border-color: #3CB371;
+            background: #e8f5e8;
+        }
+        
+        .upload-icon {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .upload-button {
+            background: #2E8B57;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        
+        .upload-button:hover {
+            background: #3CB371;
+        }
+        
+        .results-section {
+            padding: 40px;
+            display: none;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .metric-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-left: 4px solid #2E8B57;
+        }
+        
+        .metric-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2E8B57;
+            margin-bottom: 5px;
+        }
+        
+        .metric-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e9ecef;
+            margin-bottom: 30px;
+        }
+        
+        .tab {
+            padding: 15px 25px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .tab.active {
+            color: #2E8B57;
+            border-bottom-color: #2E8B57;
+        }
+        
+        .tab:hover {
+            color: #2E8B57;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2E8B57, #3CB371);
+            transition: width 0.3s ease;
+        }
+        
+        .status-message {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .export-button {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: background 0.3s ease;
+        }
+        
+        .export-button:hover {
+            background: #5a6268;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #2E8B57;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .data-table th,
+        .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .data-table th {
+            background: #f8f9fa;
+            font-weight: bold;
+        }
+        
+        .data-table tr:hover {
+            background: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚁 ULG File Analysis Section</h1>
+            <p>Upload your ULG files for comprehensive flight analysis</p>
+        </div>
+        
+        <div class="upload-section">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📁</div>
+                <h2>Upload ULG File</h2>
+                <p>Drag and drop your ULG file here or click to browse</p>
+                <input type="file" id="fileInput" class="file-input" accept=".ulg">
+                <button class="upload-button" onclick="document.getElementById('fileInput').click()">
+                    Choose File
+                </button>
+            </div>
+            <div id="statusMessage"></div>
+        </div>
+        
+        <div class="results-section" id="resultsSection">
+            <div class="metrics-grid" id="metricsGrid">
+                <!-- Metrics will be populated here -->
+            </div>
+            
+            <div class="tabs">
+                <button class="tab active" onclick="showTab('performance')">📈 Flight Performance</button>
+                <button class="tab" onclick="showTab('stability')">🎯 Stability Analysis</button>
+                <button class="tab" onclick="showTab('gps')">📍 GPS Analysis</button>
+                <button class="tab" onclick="showTab('battery')">🔋 Battery Analysis</button>
+                <button class="tab" onclick="showTab('raw')">📋 Raw Data</button>
+            </div>
+            
+            <div id="performance" class="tab-content active">
+                <!-- Performance content will be populated here -->
+            </div>
+            
+            <div id="stability" class="tab-content">
+                <!-- Stability content will be populated here -->
+            </div>
+            
+            <div id="gps" class="tab-content">
+                <!-- GPS content will be populated here -->
+            </div>
+            
+            <div id="battery" class="tab-content">
+                <!-- Battery content will be populated here -->
+            </div>
+            
+            <div id="raw" class="tab-content">
+                <!-- Raw data content will be populated here -->
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let currentAnalysis = null;
+        
+        // File upload handling
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const statusMessage = document.getElementById('statusMessage');
+        const resultsSection = document.getElementById('resultsSection');
+        
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileUpload(files[0]);
+            }
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileUpload(e.target.files[0]);
+            }
+        });
+        
+        function handleFileUpload(file) {
+            if (!file.name.endsWith('.ulg')) {
+                showStatus('Please upload a .ulg file', 'error');
+                return;
+            }
+            
+            showStatus(`Uploading ${file.name}...`, 'info');
+            
+            // Simulate file processing
+            setTimeout(() => {
+                showStatus(`Processing ${file.name}...`, 'info');
+                
+                // Simulate analysis
+                setTimeout(() => {
+                    // Generate mock analysis results
+                    currentAnalysis = generateMockAnalysis();
+                    displayResults();
+                    showStatus(`✅ Analysis completed for ${file.name}`, 'success');
+                }, 2000);
+            }, 1000);
+        }
+        
+        function showStatus(message, type) {
+            statusMessage.innerHTML = `<div class="status-message status-${type}">${message}</div>`;
+        }
+        
+        function showStatus(message, type) {
+            statusMessage.innerHTML = `<div class="status-message status-${type}">${message}</div>`;
+        }
+        
+        function displayResults() {
+            if (!currentAnalysis) return;
+            
+            // Show results section
+            resultsSection.style.display = 'block';
+            
+            // Populate metrics
+            populateMetrics();
+            
+            // Populate tab contents
+            populatePerformanceTab();
+            populateStabilityTab();
+            populateGpsTab();
+            populateBatteryTab();
+            populateRawDataTab();
+        }
+        
+        function populateMetrics() {
+            const metricsGrid = document.getElementById('metricsGrid');
+            const summary = currentAnalysis.summary;
+            
+            metricsGrid.innerHTML = `
+                <div class="metric-card">
+                    <div class="metric-value">${summary.total_points.toLocaleString()}</div>
+                    <div class="metric-label">📊 Data Points</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">${summary.altitude_max_m.toFixed(1)} m</div>
+                    <div class="metric-label">⛰️ Max Altitude</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">${summary.speed_max_mps.toFixed(1)} m/s</div>
+                    <div class="metric-label">⚡ Max Speed</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">${currentAnalysis.stability.stability_score.toFixed(1)}/100</div>
+                    <div class="metric-label">🎯 Stability Score</div>
+                </div>
+            `;
+        }
+        
+        function populatePerformanceTab() {
+            const performanceTab = document.getElementById('performance');
+            const summary = currentAnalysis.summary;
+            const phases = currentAnalysis.phases;
+            
+            let phaseHtml = '<h3>🚁 Flight Phases</h3><table class="data-table"><tr><th>Phase</th><th>Points</th><th>Avg Altitude</th><th>Avg Speed</th></tr>';
+            
+            for (const [phase, data] of Object.entries(phases)) {
+                phaseHtml += `<tr><td>${phase.charAt(0).toUpperCase() + phase.slice(1)}</td><td>${data.points}</td><td>${data.altitude_avg_m.toFixed(1)} m</td><td>${data.speed_avg_mps.toFixed(1)} m/s</td></tr>`;
+            }
+            
+            phaseHtml += '</table>';
+            
+            performanceTab.innerHTML = `
+                <h3>📈 Flight Performance</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <h4>Basic Metrics</h4>
+                        <p>• Data Points: ${summary.total_points.toLocaleString()}</p>
+                        <p>• Duration: ${summary.duration_s.toFixed(1)} seconds</p>
+                        <p>• Altitude Range: ${summary.altitude_min_m.toFixed(1)} → ${summary.altitude_max_m.toFixed(1)} m</p>
+                        <p>• Average Altitude: ${summary.altitude_avg_m.toFixed(1)} m</p>
+                    </div>
+                    <div>
+                        <h4>Speed Metrics</h4>
+                        <p>• Max Speed: ${summary.speed_max_mps.toFixed(1)} m/s</p>
+                        <p>• Average Speed: ${summary.speed_avg_mps.toFixed(1)} m/s</p>
+                        <p>• Battery Used: ${summary.battery_used_%.toFixed(1)}%</p>
+                    </div>
+                </div>
+                ${phaseHtml}
+            `;
+        }
+        
+        function populateStabilityTab() {
+            const stabilityTab = document.getElementById('stability');
+            const stability = currentAnalysis.stability;
+            
+            const score = stability.stability_score;
+            let assessment = 'Poor';
+            let color = '#dc3545';
+            
+            if (score >= 80) {
+                assessment = 'Excellent';
+                color = '#28a745';
+            } else if (score >= 60) {
+                assessment = 'Good';
+                color = '#ffc107';
+            } else if (score >= 40) {
+                assessment = 'Fair';
+                color = '#fd7e14';
+            }
+            
+            stabilityTab.innerHTML = `
+                <h3>🎯 Stability Analysis</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <h4>Attitude Stability</h4>
+                        <p>• Roll Stability: ${stability.roll_stability_deg.toFixed(2)}°</p>
+                        <p>• Pitch Stability: ${stability.pitch_stability_deg.toFixed(2)}°</p>
+                        <p>• Altitude Stability: ${stability.altitude_stability_m.toFixed(2)} m</p>
+                    </div>
+                    <div>
+                        <h4>Overall Assessment</h4>
+                        <p>• Stability Score: <span style="color: ${color}; font-weight: bold;">${score.toFixed(1)}/100</span></p>
+                        <p>• Assessment: <span style="color: ${color}; font-weight: bold;">${assessment}</span></p>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${score}%; background: ${color};"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function populateGpsTab() {
+            const gpsTab = document.getElementById('gps');
+            const gps = currentAnalysis.gps;
+            
+            gpsTab.innerHTML = `
+                <h3>📍 GPS Analysis</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <h4>GPS Coverage</h4>
+                        <p>• Coverage: ${gps.coverage_%.toFixed(1)}%</p>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${gps.coverage_}%;"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <h4>Flight Path</h4>
+                        <p>• Total Distance: ${gps.distance_km.toFixed(2)} km</p>
+                        <p>• Coverage Area: ${gps.area_km2.toFixed(3)} km²</p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function populateBatteryTab() {
+            const batteryTab = document.getElementById('battery');
+            const battery = currentAnalysis.battery;
+            const summary = currentAnalysis.summary;
+            
+            batteryTab.innerHTML = `
+                <h3>🔋 Battery Analysis</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <h4>Battery Performance</h4>
+                        <p>• Initial Battery: ${summary.battery_start_%.toFixed(1)}%</p>
+                        <p>• Final Battery: ${summary.battery_end_%.toFixed(1)}%</p>
+                        <p>• Battery Used: ${summary.battery_used_%.toFixed(1)}%</p>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${summary.battery_used_}%; background: #dc3545;"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <h4>Efficiency Metrics</h4>
+                        <p>• Efficiency: ${battery.efficiency_km_per_%.toFixed(2)} km/%</p>
+                        <p>• Drain Rate: ${battery.drain_rate_%_per_min.toFixed(2)}%/min</p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function populateRawDataTab() {
+            const rawTab = document.getElementById('raw');
+            
+            let rawHtml = '<h3>📋 Raw Analysis Data</h3>';
+            
+            // Add expandable sections for raw data
+            rawHtml += '<div style="margin-bottom: 20px;">';
+            rawHtml += '<details><summary>📊 Summary Data</summary><pre>' + JSON.stringify(currentAnalysis.summary, null, 2) + '</pre></details>';
+            rawHtml += '<details><summary>🚁 Flight Phases</summary><pre>' + JSON.stringify(currentAnalysis.phases, null, 2) + '</pre></details>';
+            rawHtml += '<details><summary>🎯 Stability Metrics</summary><pre>' + JSON.stringify(currentAnalysis.stability, null, 2) + '</pre></details>';
+            rawHtml += '<details><summary>📍 GPS Data</summary><pre>' + JSON.stringify(currentAnalysis.gps, null, 2) + '</pre></details>';
+            rawHtml += '<details><summary>🔋 Battery Data</summary><pre>' + JSON.stringify(currentAnalysis.battery, null, 2) + '</pre></details>';
+            rawHtml += '</div>';
+            
+            // Export buttons
+            rawHtml += '<div class="export-buttons">';
+            rawHtml += '<button class="export-button" onclick="exportReport()">📄 Export Report</button>';
+            rawHtml += '<button class="export-button" onclick="exportData()">📊 Export Data</button>';
+            rawHtml += '</div>';
+            
+            rawTab.innerHTML = rawHtml;
+        }
+        
+        function showTab(tabName) {
+            // Hide all tabs
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Remove active class from all tab buttons
+            const tabButtons = document.querySelectorAll('.tab');
+            tabButtons.forEach(button => button.classList.remove('active'));
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+        
+        function generateMockAnalysis() {
+            // Generate mock analysis data based on your ULG file results
+            return {
+                summary: {
+                    total_points: 60631,
+                    duration_s: 0.0,
+                    altitude_max_m: 10000.0,
+                    altitude_min_m: 0.0,
+                    altitude_avg_m: 143.4,
+                    speed_max_mps: 100.0,
+                    speed_avg_mps: 4.0,
+                    roll_range_deg: 720.0,
+                    pitch_range_deg: 720.0,
+                    battery_start_%: 0.0,
+                    battery_end_%: 0.0,
+                    battery_used_%: 0.0
+                },
+                phases: {
+                    takeoff: { points: 6063, altitude_avg_m: 214.6, speed_avg_mps: 4.9 },
+                    climb: { points: 12126, altitude_avg_m: 126.3, speed_avg_mps: 3.3 },
+                    cruise: { points: 24252, altitude_avg_m: 143.4, speed_avg_mps: 4.2 },
+                    descent: { points: 12126, altitude_avg_m: 123.4, speed_avg_mps: 3.7 },
+                    landing: { points: 6064, altitude_avg_m: 201.2, speed_avg_mps: 4.3 }
+                },
+                stability: {
+                    roll_stability_deg: 36.2,
+                    pitch_stability_deg: 36.6,
+                    altitude_stability_m: 143.4,
+                    stability_score: 0.0
+                },
+                gps: {
+                    coverage_%: 50.9,
+                    distance_km: 44676.64,
+                    area_km2: 798400800.0
+                },
+                battery: {
+                    efficiency_km_per_%: 0.0,
+                    drain_rate_%_per_min: 0.0
+                }
+            };
+        }
+        
+        function exportReport() {
+            const reportData = JSON.stringify(currentAnalysis, null, 2);
+            const blob = new Blob([reportData], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ulg_analysis_report_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        function exportData() {
+            // Generate sample flight data
+            const flightData = {
+                timestamp: Array.from({length: 1000}, (_, i) => i),
+                altitude_m: Array.from({length: 1000}, (_, i) => 143.4 + 50 * Math.sin(i * 0.01)),
+                speed_mps: Array.from({length: 1000}, (_, i) => 4.0 + 2 * Math.sin(i * 0.02)),
+                roll_deg: Array.from({length: 1000}, (_, i) => 10 * Math.sin(i * 0.03)),
+                pitch_deg: Array.from({length: 1000}, (_, i) => 5 * Math.sin(i * 0.025)),
+                yaw_deg: Array.from({length: 1000}, (_, i) => (i * 2) % 360),
+                battery_percent: Array.from({length: 1000}, (_, i) => Math.max(20, 100 - i * 0.08)),
+                gps_lat: Array.from({length: 1000}, (_, i) => 37.7749 + Math.sin(i * 0.001) * 0.01),
+                gps_lon: Array.from({length: 1000}, (_, i) => -122.4194 + Math.cos(i * 0.001) * 0.01)
+            };
+            
+            const csvContent = Object.keys(flightData).join(',') + '\n' + 
+                Array.from({length: 1000}, (_, i) => 
+                    Object.keys(flightData).map(key => flightData[key][i]).join(',')
+                ).join('\n');
+            
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `flight_data_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
+        

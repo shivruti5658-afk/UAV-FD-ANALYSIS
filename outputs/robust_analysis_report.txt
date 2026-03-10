@@ -1,0 +1,32 @@
+📊 FLIGHT SUMMARY
+--------------------
+Data Points: 60,631
+Duration: 0.0 seconds
+Altitude: 0.0 → 10000.0 m
+Speed: 4.0 m/s (max: 100.0)
+Battery: 0.0% → 0.0%
+
+🚁 FLIGHT PHASES
+--------------------
+Takeoff   : 6063 points, alt: 214.6m, speed: 4.9m/s
+Climb     : 12126 points, alt: 126.3m, speed: 3.3m/s
+Cruise    : 24252 points, alt: 143.4m, speed: 4.2m/s
+Descent   : 12126 points, alt: 123.4m, speed: 3.7m/s
+Landing   : 6064 points, alt: 201.2m, speed: 4.3m/s
+
+🎯 STABILITY METRICS
+--------------------
+Roll Stability: 36.2°
+Pitch Stability: 36.6°
+Stability Score: 0.0/100
+
+📍 GPS ANALYSIS
+--------------------
+Coverage: 50.9%
+Distance: 44676.64 km
+Area: 798400800.000 km²
+
+🔋 BATTERY ANALYSIS
+--------------------
+Efficiency: 0.00 km/%
+Drain Rate: 0.00%/min

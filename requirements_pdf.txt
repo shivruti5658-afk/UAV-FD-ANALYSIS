@@ -1,0 +1,15 @@
+# PDF Report Generation Dependencies
+# Install these packages to enable PDF export functionality
+
+# Core PDF generation
+reportlab>=3.6.0
+
+# Chart generation for PDF
+matplotlib>=3.5.0
+seaborn>=0.11.0
+
+# Additional plotting utilities
+plotly>=5.0.0
+
+# Installation command:
+# pip install reportlab matplotlib seaborn plotly
