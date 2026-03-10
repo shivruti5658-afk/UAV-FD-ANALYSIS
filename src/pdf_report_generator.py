@@ -289,42 +289,231 @@ class PDFReportGenerator:
         content.append(Paragraph("Flight Performance Metrics", self.styles['CustomSubtitle']))
         content.append(Spacer(1, 12))
         
-        # Flight duration analysis
+        # Overall performance assessment
         duration = metrics.get('flight_duration', {})
+        max_alt = metrics.get('altitude_stats', {})
+        speed = metrics.get('speed_stats', {})
+        distance = metrics.get('distance_traveled', {})
+        
+        # Performance grade calculation
+        duration_score = min(100, (duration.get('minutes', 0) / 30) * 100)
+        altitude_score = min(100, (max_alt.get('max_altitude', 0) / 200) * 100)
+        speed_score = min(100, (speed.get('avg_speed', 0) / 20) * 100)
+        overall_score = (duration_score + altitude_score + speed_score) / 3
+        
+        performance_grade = "Excellent" if overall_score > 80 else "Good" if overall_score > 60 else "Fair" if overall_score > 40 else "Poor"
+        
+        content.append(Paragraph(f"<b>Overall Performance Grade: {performance_grade} ({overall_score:.1f}/100)</b>", self.styles['MetricStyle']))
+        content.append(Spacer(1, 8))
+        
+        # Detailed flight duration analysis
         content.append(Paragraph("<b>Flight Duration Analysis</b>", self.styles['MetricStyle']))
         duration_text = f"""
-        The total flight duration was {duration.get('minutes', 0):.1f} minutes ({duration.get('hours', 0):.2f} hours). 
-        This duration indicates a {'short' if duration.get('minutes', 0) < 10 else 'medium' if duration.get('minutes', 0) < 30 else 'long'} 
-        flight suitable for {'surveillance' if duration.get('minutes', 0) < 10 else 'inspection' if duration.get('minutes', 0) < 30 else 'mapping'} operations.
+        The total flight duration was {duration.get('minutes', 0):.1f} minutes ({duration.get('hours', 0):.2f} hours), 
+        covering {duration.get('data_points', 0):,} data points at a sampling rate of approximately {duration.get('data_points', 0)/duration.get('minutes', 1):.1f} Hz.
         """
+        
+        if duration.get('minutes', 0) < 5:
+            duration_text += """
+            This duration indicates a short-duration mission typical of quick surveillance, 
+            system testing, or precision inspection operations.
+            """
+        elif duration.get('minutes', 0) < 15:
+            duration_text += """
+            This represents a medium-duration mission suitable for area monitoring, 
+            infrastructure inspection, or moderate-range survey operations.
+            """
+        elif duration.get('minutes', 0) < 30:
+            duration_text += """
+            This extended duration supports comprehensive mapping, long-range surveillance, 
+            or detailed survey missions with extensive data collection requirements.
+            """
+        else:
+            duration_text += """
+            This long-duration mission demonstrates excellent endurance capabilities 
+            suitable for large-scale survey operations, extended monitoring, or 
+            complex multi-objective missions.
+            """
+        
         content.append(Paragraph(duration_text, self.styles['CustomNormal']))
         content.append(Spacer(1, 12))
         
-        # Altitude analysis
-        altitude = metrics.get('altitude_stats', {})
-        content.append(Paragraph("<b>Altitude Performance</b>", self.styles['MetricStyle']))
+        # Comprehensive altitude analysis
+        content.append(Paragraph("<b>Altitude Performance Analysis</b>", self.styles['MetricStyle']))
         altitude_text = f"""
-        The aircraft reached a maximum altitude of {altitude.get('max_altitude', 0):.1f} meters and maintained 
-        an average altitude of {altitude.get('avg_altitude', 0):.1f} meters. The altitude range of 
-        {altitude.get('altitude_range', 0):.1f} meters shows {'stable' if altitude.get('altitude_range', 0) < 50 else 'variable'} 
-        altitude control throughout the flight.
+        The aircraft reached a maximum altitude of {max_alt.get('max_altitude', 0):.1f} meters and maintained 
+        an average altitude of {max_alt.get('avg_altitude', 0):.1f} meters throughout the flight. 
+        The altitude range of {max_alt.get('altitude_range', 0):.1f} meters demonstrates the aircraft's 
+        vertical operational capabilities.
         """
+        
+        # Altitude profile classification
+        if max_alt.get('max_altitude', 0) < 50:
+            altitude_profile = "low-altitude operations typical of close-range inspection or urban surveillance"
+        elif max_alt.get('max_altitude', 0) < 150:
+            altitude_profile = "medium-altitude operations suitable for general surveillance and mapping"
+        elif max_alt.get('max_altitude', 0) < 300:
+            altitude_profile = "high-altitude operations for extended range and improved obstacle clearance"
+        else:
+            altitude_profile = "very high-altitude operations demonstrating exceptional performance capabilities"
+        
+        altitude_text += f"""
+        The altitude profile indicates {altitude_profile}. 
+        The altitude stability (standard deviation of {max_alt.get('std_dev', 0):.2f} meters) 
+        shows {'excellent' if max_alt.get('std_dev', 0) < 10 else 'good' if max_alt.get('std_dev', 0) < 25 else 'moderate'} altitude control precision.
+        """
+        
         content.append(Paragraph(altitude_text, self.styles['CustomNormal']))
         content.append(Spacer(1, 12))
         
-        # Speed analysis
-        speed = metrics.get('speed_stats', {})
-        content.append(Paragraph("<b>Speed Performance</b>", self.styles['MetricStyle']))
+        # Detailed speed analysis
+        content.append(Paragraph("<b>Speed Performance Analysis</b>", self.styles['MetricStyle']))
         speed_text = f"""
         The aircraft maintained an average speed of {speed.get('avg_speed', 0):.1f} m/s with a maximum 
-        speed of {speed.get('max_speed', 0):.1f} m/s. The speed standard deviation of {speed.get('speed_std', 0):.2f} m/s 
-        indicates {'consistent' if speed.get('speed_std', 0) < 2 else 'variable'} speed control during the mission.
+        speed of {speed.get('max_speed', 0):.1f} m/s and minimum speed of {speed.get('min_speed', 0):.1f} m/s. 
+        The speed standard deviation of {speed.get('speed_std', 0):.2f} m/s indicates {'very consistent' if speed.get('speed_std', 0) < 2 else 'stable' if speed.get('speed_std', 0) < 5 else 'variable'} speed control.
         """
+        
+        # Speed efficiency analysis
+        if speed.get('avg_speed', 0) > 15:
+            speed_text += """
+            The high average speed indicates efficient mission execution with excellent 
+            coverage capabilities and optimal time utilization.
+            """
+        elif speed.get('avg_speed', 0) > 8:
+            speed_text += """
+            The moderate average speed provides good balance between mission efficiency 
+            and precision operations, suitable for most standard UAV applications.
+            """
+        else:
+            speed_text += """
+            The lower average speed suggests precision operations or potential 
+            optimization opportunities for improved mission efficiency.
+            """
+        
         content.append(Paragraph(speed_text, self.styles['CustomNormal']))
         content.append(Spacer(1, 12))
         
-        # Create altitude and speed charts
-        content.extend(self._create_metrics_charts(metrics))
+        # Distance and coverage analysis
+        if distance.get('total_distance_m', 0) > 0:
+            content.append(Paragraph("<b>Distance and Coverage Analysis</b>", self.styles['MetricStyle']))
+            distance_text = f"""
+            The total ground distance covered was {distance.get('total_distance_m', 0):.1f} meters 
+            ({distance.get('total_distance_m', 0)/1000:.2f} km) with an average ground speed 
+            of {distance.get('avg_ground_speed_mps', speed.get('avg_speed', 0)):.1f} m/s.
+            """
+            
+            # Coverage efficiency
+            coverage_efficiency = distance.get('total_distance_m', 0) / duration.get('minutes', 1)
+            if coverage_efficiency > 100:
+                distance_text += f"""
+                The coverage efficiency of {coverage_efficiency:.1f} meters per minute indicates 
+                excellent mission effectiveness and optimal flight path planning.
+                """
+            elif coverage_efficiency > 50:
+                distance_text += f"""
+                The coverage efficiency of {coverage_efficiency:.1f} meters per minute shows 
+                good operational effectiveness with reasonable flight path utilization.
+                """
+            else:
+                distance_text += f"""
+                The coverage efficiency of {coverage_efficiency:.1f} meters per minute suggests 
+                potential optimization opportunities for flight path planning.
+                """
+            
+            content.append(Paragraph(distance_text, self.styles['CustomNormal']))
+            content.append(Spacer(1, 12))
+        
+        # Create enhanced charts
+        content.extend(self._create_enhanced_metrics_charts(metrics))
+        
+        return content
+    
+    def _create_enhanced_metrics_charts(self, metrics: Dict[str, Any]) -> List:
+        """Create enhanced charts for flight metrics"""
+        content = []
+        
+        try:
+            # Create comprehensive metrics visualization
+            fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(12, 8))
+            
+            # 1. Performance radar chart
+            duration_score = min(100, (metrics.get('flight_duration', {}).get('minutes', 0) / 30) * 100)
+            altitude_score = min(100, (metrics.get('altitude_stats', {}).get('max_altitude', 0) / 200) * 100)
+            speed_score = min(100, (metrics.get('speed_stats', {}).get('avg_speed', 0) / 20) * 100)
+            
+            categories = ['Duration', 'Altitude', 'Speed']
+            scores = [duration_score, altitude_score, speed_score]
+            
+            # Create bar chart for performance metrics
+            bars = ax1.bar(categories, scores, color=['blue', 'green', 'orange'])
+            ax1.set_title('Performance Scores')
+            ax1.set_ylabel('Score (0-100)')
+            ax1.set_ylim(0, 100)
+            
+            # Add value labels on bars
+            for bar, score in zip(bars, scores):
+                height = bar.get_height()
+                ax1.text(bar.get_x() + bar.get_width()/2., height + 1,
+                          f'{score:.1f}', ha='center', va='bottom')
+            
+            # 2. Altitude profile
+            altitude_stats = metrics.get('altitude_stats', {})
+            altitude_values = [altitude_stats.get('min_altitude', 0), 
+                              altitude_stats.get('avg_altitude', 0), 
+                              altitude_stats.get('max_altitude', 0)]
+            altitude_labels = ['Min', 'Avg', 'Max']
+            
+            ax2.bar(altitude_labels, altitude_values, color=['lightblue', 'blue', 'darkblue'])
+            ax2.set_title('Altitude Statistics (m)')
+            ax2.set_ylabel('Altitude (m)')
+            
+            # 3. Speed distribution
+            speed_stats = metrics.get('speed_stats', {})
+            speed_values = [speed_stats.get('min_speed', 0), 
+                           speed_stats.get('avg_speed', 0), 
+                           speed_stats.get('max_speed', 0)]
+            speed_labels = ['Min', 'Avg', 'Max']
+            
+            ax3.bar(speed_labels, speed_values, color=['lightgreen', 'green', 'darkgreen'])
+            ax3.set_title('Speed Statistics (m/s)')
+            ax3.set_ylabel('Speed (m/s)')
+            
+            # 4. Flight efficiency
+            distance = metrics.get('distance_traveled', {})
+            duration = metrics.get('flight_duration', {})
+            
+            if distance.get('total_distance_m', 0) > 0 and duration.get('minutes', 0) > 0:
+                efficiency = distance.get('total_distance_m', 0) / duration.get('minutes', 0)
+                
+                # Create efficiency gauge
+                ax4.bar(['Coverage Efficiency'], [efficiency], color='purple')
+                ax4.set_title(f'Coverage Efficiency: {efficiency:.1f} m/min')
+                ax4.set_ylabel('Meters per minute')
+                ax4.axhline(y=100, color='green', linestyle='--', alpha=0.7, label='Excellent')
+                ax4.axhline(y=50, color='orange', linestyle='--', alpha=0.7, label='Good')
+                ax4.legend()
+            else:
+                ax4.text(0.5, 0.5, 'No distance data available', ha='center', va='center', transform=ax4.transAxes)
+                ax4.set_title('Coverage Efficiency')
+            
+            plt.tight_layout()
+            
+            # Save to temporary file
+            with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
+                plt.savefig(tmp.name, dpi=150, bbox_inches='tight')
+                plt.close()
+                
+                # Add to PDF
+                img = Image(tmp.name, width=7*inch, height=5*inch)
+                content.append(img)
+                content.append(Spacer(1, 12))
+                
+                # Clean up
+                os.unlink(tmp.name)
+                
+        except Exception as e:
+            content.append(Paragraph(f"Enhanced metrics chart generation error: {e}", self.styles['CustomNormal']))
         
         return content
     
@@ -866,45 +1055,130 @@ class PDFReportGenerator:
             duration = metrics.get('flight_duration', {}).get('minutes', 0)
             max_alt = metrics.get('altitude_stats', {}).get('max_altitude', 0)
             avg_speed = metrics.get('speed_stats', {}).get('avg_speed', 0)
+            distance = metrics.get('distance_traveled', {}).get('total_distance_m', 0)
             
             summary_parts.append(f"""
-            The UAV flight analysis reveals a {duration:.1f}-minute mission reaching a maximum altitude 
-            of {max_alt:.1f} meters with an average speed of {avg_speed:.1f} m/s.
+            The UAV flight analysis reveals a comprehensive {duration:.1f}-minute mission covering a total distance 
+            of {distance:.1f} meters. The aircraft successfully reached a maximum altitude of {max_alt:.1f} meters 
+            while maintaining an average speed of {avg_speed:.1f} m/s throughout the operation.
+            """)
+            
+            # Flight profile classification
+            if duration < 10:
+                flight_type = "short-duration surveillance or inspection mission"
+            elif duration < 30:
+                flight_type = "medium-duration mapping or monitoring operation"
+            else:
+                flight_type = "long-range survey or extended mission"
+            
+            summary_parts.append(f"""
+            Based on the flight characteristics, this appears to be a {flight_type} 
+            with {'stable and controlled' if max_alt < 200 else 'high-altitude'} flight parameters.
             """)
         
         # Anomaly assessment
         if 'anomalies' in analysis_results:
             anomalies = analysis_results['anomalies']
             total_anomalies = anomalies.get('summary', {}).get('total_anomalies', 0)
+            anomaly_rate = anomalies.get('summary', {}).get('overall_anomaly_rate', 0)
             assessment = anomalies.get('summary', {}).get('overall_assessment', 'unknown')
             
             summary_parts.append(f"""
             Anomaly detection identified {total_anomalies} anomalies throughout the flight, 
-            indicating {assessment} flight quality.
+            representing an overall anomaly rate of {anomaly_rate:.2%}. The assessment indicates 
+            {assessment} flight quality, requiring {'immediate attention and corrective action' if total_anomalies > 50 else 'monitoring and potential optimization'}.
             """)
+            
+            # Anomaly breakdown insights
+            if 'categories' in anomalies:
+                high_risk_categories = []
+                for category, results in anomalies['categories'].items():
+                    if results.get('total_anomalies', 0) > 10:
+                        high_risk_categories.append(category)
+                
+                if high_risk_categories:
+                    summary_parts.append(f"""
+                    Critical anomaly concentrations were detected in {', '.join(high_risk_categories)} systems, 
+                    indicating potential areas requiring immediate maintenance or system calibration.
+                    """)
         
         # Battery performance
         if 'battery' in analysis_results:
             battery = analysis_results['battery']
             consumption_rate = battery.get('consumption_metrics', {}).get('consumption_rate_percent_per_minute', 0)
             assessment = battery.get('overall_assessment', 'unknown')
+            remaining_time = battery.get('remaining_time', {}).get('remaining_flight_time_minutes', 0)
             
             summary_parts.append(f"""
-            Battery performance shows a consumption rate of {consumption_rate:.1f}% per minute, 
-            with {assessment} efficiency characteristics.
+            Battery performance analysis shows a consumption rate of {consumption_rate:.2f}% per minute 
+            with an estimated remaining flight time of {remaining_time:.1f} minutes. The {assessment.lower()} 
+            battery performance suggests {'optimal power management' if consumption_rate < 2 else 'potential efficiency improvements'} for future missions.
             """)
+            
+            # Battery efficiency insights
+            if 'efficiency' in battery:
+                efficiency = battery['efficiency']
+                altitude_eff = efficiency.get('altitude_per_percent', 0)
+                distance_eff = efficiency.get('distance_per_percent', 0)
+                
+                summary_parts.append(f"""
+                Battery efficiency metrics indicate {altitude_eff:.2f} meters of altitude gain per percent battery 
+                and {distance_eff:.0f} meters of distance covered per percent battery, providing valuable 
+                benchmarks for mission planning and optimization.
+                """)
         
         # Stability assessment
         if 'stability' in analysis_results:
             stability = analysis_results['stability']
             rating = stability.get('overall_rating', {}).get('rating', 'unknown')
+            score = stability.get('overall_rating', {}).get('score', 0)
             
             summary_parts.append(f"""
-            Flight stability analysis indicates {rating} overall stability with good 
-            attitude control characteristics.
+            Flight stability analysis indicates {rating.lower()} overall performance with a stability 
+            score of {score:.1f}/100. This rating suggests {'excellent control system performance' if score > 80 else 'good flight characteristics with room for improvement' if score > 60 else 'need for control system optimization'}.
             """)
+            
+            # Stability insights
+            if 'attitude_stability' in stability:
+                attitude = stability['attitude_stability']
+                roll_std = attitude.get('roll', {}).get('std_dev', 0)
+                pitch_std = attitude.get('pitch', {}).get('std_dev', 0)
+                
+                if roll_std < 5 and pitch_std < 5:
+                    summary_parts.append("""
+                    Excellent attitude control was demonstrated with minimal roll and pitch deviations, 
+                    indicating precise flight control system calibration and pilot proficiency.
+                    """)
         
-        return " ".join(summary_parts)
+        # Flight phase insights
+        if 'phases' in analysis_results:
+            phases = analysis_results['phases']
+            phase_list = phases.get('phases', [])
+            
+            if phase_list:
+                summary_parts.append(f"""
+                The flight was successfully segmented into {len(phase_list)} distinct phases, 
+                providing detailed insights into mission progression and operational efficiency.
+                """)
+                
+                # Phase duration analysis
+                total_duration = sum([phase.get('duration_seconds', 0) for phase in phase_list])
+                avg_phase_duration = total_duration / len(phase_list) if phase_list else 0
+                
+                summary_parts.append(f"""
+                With an average phase duration of {avg_phase_duration:.1f} seconds, the flight 
+                demonstrated {'efficient phase transitions' if avg_phase_duration < 60 else 'extended operational periods'} 
+                typical of {'automated flight operations' if avg_phase_duration < 30 else 'complex mission requirements'}.
+                """)
+        
+        # Overall mission assessment
+        summary_parts.append(f"""
+        Overall, this flight demonstrates {'professional-grade operational capabilities' if duration > 20 and max_alt > 100 else 'solid flight performance with potential for optimization'}. 
+        The comprehensive analysis provides actionable insights for improving future mission planning, 
+        system maintenance, and operational efficiency.
+        """)
+        
+        return " ".join(summary_parts) if summary_parts else "Flight analysis completed successfully with comprehensive data collection and processing."
     
     def _get_duration_assessment(self, metrics: Dict[str, Any]) -> str:
         """Get duration assessment"""
@@ -958,79 +1232,288 @@ class PDFReportGenerator:
         if 'metrics' in analysis_results:
             metrics = analysis_results['metrics']
             duration = metrics.get('flight_duration', {}).get('minutes', 0)
+            max_alt = metrics.get('altitude_stats', {}).get('max_altitude', 0)
+            avg_speed = metrics.get('speed_stats', {}).get('avg_speed', 0)
+            distance = metrics.get('distance_traveled', {}).get('total_distance_m', 0)
             
             if duration > 0:
+                performance_grade = "excellent" if duration > 20 and max_alt > 100 else "good" if duration > 10 and max_alt > 50 else "satisfactory"
                 conclusions.append(f"""
-                The flight demonstrated successful mission completion with a duration of {duration:.1f} minutes. 
-                The aircraft maintained stable flight characteristics throughout the mission.
+                The flight demonstrated {performance_grade} mission execution with a duration of {duration:.1f} minutes, 
+                covering {distance:.1f} meters at an average speed of {avg_speed:.1f} m/s. 
+                The aircraft successfully maintained controlled flight parameters throughout the operation, 
+                indicating reliable system performance and operational readiness.
                 """)
+                
+                # Performance efficiency analysis
+                if avg_speed > 10 and max_alt > 50:
+                    conclusions.append("""
+                    The combination of speed and altitude performance suggests optimal flight efficiency 
+                    with effective power management and aerodynamic performance characteristics.
+                    """)
+                elif avg_speed < 5:
+                    conclusions.append("""
+                    The lower average speed indicates either precision flight operations or potential 
+                    optimization opportunities for mission efficiency and time management.
+                    """)
         
         # Anomaly conclusion
         if 'anomalies' in analysis_results:
             anomalies = analysis_results['anomalies']
             total_anomalies = anomalies.get('summary', {}).get('total_anomalies', 0)
             assessment = anomalies.get('summary', {}).get('overall_assessment', 'unknown')
+            anomaly_rate = anomalies.get('summary', {}).get('overall_anomaly_rate', 0)
             
             if total_anomalies == 0:
-                conclusions.append("No significant anomalies were detected, indicating excellent flight quality.")
-            elif assessment == "Excellent - Very few anomalies detected":
-                conclusions.append("Minimal anomalies detected suggest high-quality flight operations.")
+                conclusions.append("""
+                No significant anomalies were detected throughout the flight, indicating excellent system 
+                performance, proper calibration, and optimal operational conditions. This level of flight 
+                quality demonstrates professional-grade equipment and operational procedures.
+                """)
+            elif total_anomalies < 10:
+                conclusions.append(f"""
+                Minimal anomalies detected ({total_anomalies}) suggest high-quality flight operations 
+                with well-maintained systems and effective operational protocols. The {assessment.lower()} 
+                assessment indicates continued system reliability with opportunities for minor optimizations.
+                """)
+            elif total_anomalies < 50:
+                conclusions.append(f"""
+                Moderate anomaly levels ({total_anomalies}, {anomaly_rate:.1%} rate) indicate {assessment.lower()} 
+                flight quality with several areas requiring attention. System performance is acceptable 
+                but would benefit from preventive maintenance and calibration improvements.
+                """)
             else:
-                conclusions.append(f"Flight quality assessment: {assessment}. Review recommended for optimization.")
+                conclusions.append(f"""
+                High anomaly count ({total_anomalies}) with {anomaly_rate:.1%} anomaly rate indicates 
+                {assessment.lower()} flight quality requiring immediate attention. Multiple systems 
+                show performance issues that could impact mission safety and effectiveness.
+                """)
         
         # Battery conclusion
         if 'battery' in analysis_results:
             battery = analysis_results['battery']
             assessment = battery.get('overall_assessment', 'unknown')
-            conclusions.append(f"Battery performance was {assessment.lower()}.")
+            consumption_rate = battery.get('consumption_metrics', {}).get('consumption_rate_percent_per_minute', 0)
+            remaining_time = battery.get('remaining_time', {}).get('remaining_flight_time_minutes', 0)
+            
+            if consumption_rate < 2:
+                conclusions.append(f"""
+                Battery performance was {assessment.lower()} with an excellent consumption rate of 
+                {consumption_rate:.2f}% per minute, indicating optimal power management and efficient 
+                energy utilization. The estimated remaining flight time of {remaining_time:.1f} minutes 
+                provides good operational margins for mission planning.
+                """)
+            elif consumption_rate < 4:
+                conclusions.append(f"""
+                Battery performance showed {assessment.lower()} characteristics with a moderate consumption 
+                rate of {consumption_rate:.2f}% per minute. While acceptable for current operations, 
+                there are opportunities for power optimization to extend flight endurance and mission range.
+                """)
+            else:
+                conclusions.append(f"""
+                Battery consumption rate of {consumption_rate:.2f}% per minute indicates {assessment.lower()} 
+                efficiency requiring immediate attention. The high consumption rate limits operational 
+                endurance and may indicate system inefficiencies or battery degradation.
+                """)
         
         # Stability conclusion
         if 'stability' in analysis_results:
             stability = analysis_results['stability']
             rating = stability.get('overall_rating', {}).get('rating', 'unknown')
-            conclusions.append(f"Overall flight stability was rated as {rating.lower()}.")
+            score = stability.get('overall_rating', {}).get('score', 0)
+            
+            if score > 80:
+                conclusions.append(f"""
+                Flight stability analysis revealed {rating.lower()} performance with a stability score 
+                of {score:.1f}/100. The exceptional stability characteristics indicate precise control 
+                system calibration, minimal environmental interference, and excellent flight dynamics.
+                """)
+            elif score > 60:
+                conclusions.append(f"""
+                Overall flight stability was rated as {rating.lower()} with a score of {score:.1f}/100, 
+                indicating good flight control characteristics. While generally stable, there are 
+                opportunities for fine-tuning control parameters to enhance precision and reduce oscillations.
+                """)
+            else:
+                conclusions.append(f"""
+                Flight stability assessment of {rating.lower()} with a score of {score:.1f}/100 suggests 
+                the need for control system optimization. The stability issues detected could impact 
+                mission precision and require immediate attention to ensure safe and reliable operations.
+                """)
         
-        return " ".join(conclusions) if conclusions else "Flight analysis completed successfully."
+        # Flight phase conclusion
+        if 'phases' in analysis_results:
+            phases = analysis_results['phases']
+            phase_list = phases.get('phases', [])
+            
+            if phase_list and len(phase_list) > 0:
+                phase_efficiency = "highly efficient" if len(phase_list) > 5 else "well-structured" if len(phase_list) > 2 else "basic"
+                conclusions.append(f"""
+                Flight phase detection identified {len(phase_list)} distinct operational phases, 
+                demonstrating {phase_efficiency} mission execution. The clear phase segmentation 
+                indicates proper flight planning and systematic progression through mission objectives.
+                """)
+        
+        # Overall operational assessment
+        conclusions.append("""
+        The comprehensive flight analysis provides valuable insights into system performance, 
+        operational efficiency, and mission effectiveness. The data collected enables evidence-based 
+        decision making for maintenance scheduling, operational planning, and system optimization.
+        """)
+        
+        return " ".join(conclusions) if conclusions else "Flight analysis completed successfully with comprehensive data collection and evaluation."
     
     def _generate_recommendations(self, analysis_results: Dict[str, Any]) -> str:
         """Generate recommendations based on analysis results"""
         recommendations = []
         
-        # Anomaly recommendations
+        # Anomaly-based recommendations
         if 'anomalies' in analysis_results:
             anomalies = analysis_results['anomalies']
             total_anomalies = anomalies.get('summary', {}).get('total_anomalies', 0)
             
-            if total_anomalies > 10:
-                recommendations.append("Consider reviewing flight control parameters to reduce anomaly frequency.")
+            if total_anomalies > 50:
+                recommendations.append("""
+                **IMMEDIATE ACTIONS REQUIRED:**
+                • Schedule comprehensive system inspection and maintenance
+                • Review and recalibrate all flight control systems
+                • Implement enhanced pre-flight check procedures
+                • Consider temporary operational restrictions until issues resolved
+                """)
+            elif total_anomalies > 20:
+                recommendations.append("""
+                **SHORT-TERM RECOMMENDATIONS:**
+                • Conduct targeted maintenance on high-anomaly systems
+                • Review flight control parameters and settings
+                • Implement additional monitoring during future flights
+                • Schedule preventive maintenance within next 30 days
+                """)
             elif total_anomalies > 0:
-                recommendations.append("Monitor anomaly patterns in future flights for optimization.")
+                recommendations.append("""
+                **ROUTINE MAINTENANCE:**
+                • Continue regular monitoring of anomaly patterns
+                • Schedule routine system checks and calibrations
+                • Document anomaly sources for future reference
+                • Consider preventive maintenance during next service cycle
+                """)
         
-        # Battery recommendations
+        # Battery-based recommendations
         if 'battery' in analysis_results:
             battery = analysis_results['battery']
             consumption_rate = battery.get('consumption_metrics', {}).get('consumption_rate_percent_per_minute', 0)
+            remaining_time = battery.get('remaining_time', {}).get('remaining_flight_time_minutes', 0)
             
-            if consumption_rate > 5:
-                recommendations.append("High battery consumption detected - consider optimizing flight profile or battery capacity.")
+            if consumption_rate > 4:
+                recommendations.append("""
+                **BATTERY OPTIMIZATION:**
+                • Conduct comprehensive battery health assessment
+                • Review power management system settings
+                • Consider battery replacement or upgrade
+                • Optimize flight profiles to reduce power consumption
+                • Implement battery monitoring and alerting systems
+                """)
             elif consumption_rate > 2:
-                recommendations.append("Moderate battery consumption - monitor for efficiency improvements.")
+                recommendations.append("""
+                **POWER EFFICIENCY IMPROVEMENTS:**
+                • Review current flight patterns for efficiency opportunities
+                • Optimize cruise speeds and altitude profiles
+                • Consider aerodynamic improvements
+                • Implement power-saving flight modes where appropriate
+                """)
+            else:
+                recommendations.append("""
+                **BATTERY MAINTENANCE:**
+                • Continue current excellent power management practices
+                • Regular battery health monitoring
+                • Document efficient flight profiles for future reference
+                • Share best practices with operational team
+                """)
         
-        # Stability recommendations
+        # Stability-based recommendations
         if 'stability' in analysis_results:
             stability = analysis_results['stability']
             score = stability.get('overall_rating', {}).get('score', 0)
             
             if score < 60:
-                recommendations.append("Flight stability below optimal - review control system tuning.")
+                recommendations.append("""
+                **STABILITY IMPROVEMENTS:**
+                • Conduct comprehensive flight control system calibration
+                • Review and adjust PID controller parameters
+                • Check for mechanical issues affecting stability
+                • Implement enhanced stabilization systems
+                • Consider pilot training for improved control inputs
+                """)
             elif score < 80:
-                recommendations.append("Good stability with room for improvement.")
+                recommendations.append("""
+                **STABILITY OPTIMIZATION:**
+                • Fine-tune control parameters for improved precision
+                • Review environmental factors affecting flight stability
+                • Consider advanced stabilization features
+                • Implement regular stability monitoring protocols
+                """)
+            else:
+                recommendations.append("""
+                **STABILITY MAINTENANCE:**
+                • Maintain current excellent stability performance
+                • Document optimal control settings
+                • Share stability best practices with team
+                • Continue regular system monitoring
+                """)
         
-        # General recommendations
+        # Performance-based recommendations
+        if 'metrics' in analysis_results:
+            metrics = analysis_results['metrics']
+            avg_speed = metrics.get('speed_stats', {}).get('avg_speed', 0)
+            max_alt = metrics.get('altitude_stats', {}).get('max_altitude', 0)
+            
+            if avg_speed < 5:
+                recommendations.append("""
+                **PERFORMANCE OPTIMIZATION:**
+                • Review mission requirements and speed optimization
+                • Consider aerodynamic improvements
+                • Evaluate power-to-weight ratio
+                • Optimize flight profiles for efficiency
+                """)
+            
+            if max_alt < 50:
+                recommendations.append("""
+                **OPERATIONAL ENHANCEMENT:**
+                • Evaluate altitude requirements for mission types
+                • Consider performance improvements for higher altitude operations
+                • Review environmental limitations and constraints
+                • Plan for varied altitude mission profiles
+                """)
+        
+        # General operational recommendations
         recommendations.extend([
-            "Continue regular flight data analysis for performance monitoring.",
-            "Implement preventive maintenance based on analysis insights.",
-            "Use analysis results for pilot training and mission planning optimization."
+            """
+            **CONTINUOUS IMPROVEMENT:**
+            • Implement regular flight data analysis routines
+            • Establish performance benchmarks and standards
+            • Create comprehensive maintenance schedules
+            • Develop pilot training programs based on analysis insights
+            """,
+            """
+            **SAFETY AND COMPLIANCE:**
+            • Review and update safety procedures based on analysis findings
+            • Ensure compliance with regulatory requirements
+            • Implement risk mitigation strategies
+            • Maintain detailed operational documentation
+            """,
+            """
+            **TECHNOLOGY UPGRADES:**
+            • Consider advanced sensor integration for enhanced monitoring
+            • Evaluate automated flight control systems
+            • Implement real-time anomaly detection and alerting
+            • Explore AI-powered flight optimization systems
+            """,
+            """
+            **DATA MANAGEMENT:**
+            • Establish comprehensive data collection and storage systems
+            • Implement automated analysis and reporting workflows
+            • Create historical performance databases
+            • Develop predictive maintenance algorithms
+            """
         ])
         
-        return " ".join(recommendations) if recommendations else "Continue current flight operations with regular monitoring."
+        return " ".join(recommendations) if recommendations else "Continue current flight operations with regular monitoring and maintenance schedules."

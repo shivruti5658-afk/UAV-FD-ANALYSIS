@@ -1381,9 +1381,14 @@ class ComprehensiveAnalyzer:
             st.warning("⚠️ No flight data available. Load data first.")
             return
         
+        # Auto-run analysis if no results exist
         if not self.analysis_results:
-            st.warning("⚠️ No analysis results available. Run analysis first.")
-            return
+            st.info("🔍 No analysis results found. Running analysis automatically...")
+            self._run_comprehensive_analysis()
+            
+            if not self.analysis_results:
+                st.error("❌ Analysis failed. Cannot generate PDF report.")
+                return
         
         if not self.pdf_generator:
             st.warning("⚠️ PDF generator not available. Required modules may be missing.")
@@ -1418,6 +1423,7 @@ class ComprehensiveAnalyzer:
                 
                 st.success("✅ PDF report generated successfully!")
                 st.info(f"📄 Report saved as: {pdf_filename}")
+                st.info(f"📊 Analysis includes: {len(self.analysis_results)} modules")
                 
                 # Clean up temporary file
                 try:
@@ -1428,6 +1434,7 @@ class ComprehensiveAnalyzer:
             except Exception as e:
                 st.error(f"❌ PDF report generation failed: {e}")
                 st.info("💡 Note: PDF generation requires matplotlib, seaborn, and reportlab packages.")
+                st.info("🔧 Try running: pip install reportlab matplotlib seaborn")
     
     def _export_processed_data(self):
         """Export processed flight data"""
