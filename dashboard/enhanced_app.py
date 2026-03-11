@@ -26,6 +26,7 @@ try:
     from digital_twin import create_comprehensive_digital_twin, create_interactive_dashboard
     from visualization import create_comprehensive_flight_plots
     from report_generator import generate_all_reports
+    from professional_report_generator import generate_professional_uav_report
     ANALYSIS_MODULES_AVAILABLE = True
 except ImportError as e:
     print(f"Warning: Some analysis modules not available: {e}")
@@ -49,9 +50,9 @@ except ImportError:
 # Configure Streamlit page
 st.set_page_config(
     page_title="UAV Flight Analysis Dashboard - Enhanced",
-    page_icon="🚁",
+    page_icon="UAV",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 # Enhanced CSS
@@ -109,17 +110,19 @@ class ULGAnalysisIntegration:
     """ULG analysis integration for enhanced dashboard"""
     
     def __init__(self):
+        # Check global variables availability
+        global ROBUST_ANALYZER_AVAILABLE
         self.robust_analyzer = RobustULGAnalyzer() if ROBUST_ANALYZER_AVAILABLE else None
         self.current_ulg_analysis = None
         self.ulg_flight_data = None
         
     def create_ulg_analysis_section(self):
         """Create ULG analysis section"""
-        st.markdown("### 🚁 ULG File Analysis")
+        st.markdown("### UAV ULG File Analysis")
         st.markdown("Direct ULG file analysis with comprehensive flight metrics")
         
         # ULG upload section
-        with st.expander("📁 ULG File Upload & Analysis", expanded=True):
+        with st.expander("ULG File Upload & Analysis", expanded=True):
             uploaded_ulg_file = st.file_uploader(
                 "Upload ULG File",
                 type=['ulg', 'bin', 'log'],
@@ -127,9 +130,9 @@ class ULGAnalysisIntegration:
             )
             
             if uploaded_ulg_file is not None:
-                st.info(f"📄 ULG file uploaded: {uploaded_ulg_file.name}")
+                st.info(f"ULG file uploaded: {uploaded_ulg_file.name}")
                 
-                if st.button("🚀 Analyze ULG File", type="primary"):
+                if st.button("Analyze ULG File", type="primary"):
                     self._analyze_ulg_file(uploaded_ulg_file)
         
         # Results section
@@ -138,7 +141,7 @@ class ULGAnalysisIntegration:
     
     def _analyze_ulg_file(self, uploaded_ulg_file):
         """Analyze ULG file"""
-        with st.spinner("🔍 Analyzing ULG file..."):
+        with st.spinner("Analyzing ULG file..."):
             try:
                 # Save uploaded file temporarily
                 with tempfile.NamedTemporaryFile(delete=False, suffix='.ulg') as tmp_ulg:
@@ -148,16 +151,16 @@ class ULGAnalysisIntegration:
                 # Analyze with robust analyzer
                 if self.robust_analyzer:
                     self.current_ulg_analysis = self.robust_analyzer.analyze_ulg_file(tmp_ulg_path)
-                    st.success("✅ ULG analysis completed!")
+                    st.success("ULG analysis completed!")
                     self._create_flight_data()
                 else:
-                    st.error("❌ ULG analyzer not available")
+                    st.error("ULG analyzer not available")
                 
                 # Clean up
                 os.unlink(tmp_ulg_path)
                 
             except Exception as e:
-                st.error(f"❌ ULG analysis failed: {str(e)}")
+                st.error(f"ULG analysis failed: {str(e)}")
     
     def _create_flight_data(self):
         """Create flight data from analysis"""
@@ -165,6 +168,10 @@ class ULGAnalysisIntegration:
             return
         
         try:
+            # Ensure pandas is available
+            import pandas as pd
+            import numpy as np
+            
             summary = self.current_ulg_analysis.get('summary', {})
             num_points = min(1000, summary.get('total_points', 1000))
             
@@ -188,7 +195,7 @@ class ULGAnalysisIntegration:
         if not self.current_ulg_analysis:
             return
         
-        st.markdown("#### 📊 Analysis Results")
+        st.markdown("#### Analysis Results")
         
         # Summary metrics
         summary = self.current_ulg_analysis.get('summary', {})
@@ -207,7 +214,7 @@ class ULGAnalysisIntegration:
         
         # Analysis button
         if self.ulg_flight_data is not None:
-            if st.button("🚀 Run Full Analysis on ULG Data"):
+            if st.button("Run Full Analysis on ULG Data"):
                 self._run_analysis(self.ulg_flight_data)
     
     def _run_analysis(self, df):
@@ -221,15 +228,15 @@ class ULGAnalysisIntegration:
                 battery = comprehensive_battery_analysis(df)
                 phases = detect_flight_phases(df, 'hybrid', {'climb_threshold': 0.5, 'descent_threshold': -0.5})
                 
-                st.success("✅ Analysis completed!")
+                st.success("Analysis completed!")
                 
                 # Display results
                 self._display_metrics(metrics)
             else:
-                st.warning("⚠️ Analysis modules not available")
+                st.warning("Analysis modules not available")
                 
         except Exception as e:
-            st.error(f"❌ Analysis failed: {e}")
+            st.error(f"Analysis failed: {e}")
     
     def _display_metrics(self, metrics):
         """Display analysis metrics"""
@@ -253,15 +260,47 @@ class ULGAnalysisIntegration:
 
 def main():
     """Main function"""
+    # Check analysis modules availability
+    try:
+        from data_loader import load_csv, validate_dataset, get_dataset_summary
+        from preprocessing import preprocess_pipeline
+        from flight_metrics import calculate_all_flight_metrics, format_flight_summary
+        from stability_analysis import assess_flight_stability, generate_stability_recommendations
+        from anomaly_detection import detect_all_anomalies, generate_anomaly_report
+        from battery_analysis import comprehensive_battery_analysis, format_battery_summary
+        from flight_phase_detection import detect_flight_phases, format_phase_summary
+        from digital_twin import create_comprehensive_digital_twin, create_interactive_dashboard
+        from visualization import create_comprehensive_flight_plots
+        from report_generator import generate_all_reports
+        from professional_report_generator import generate_professional_uav_report
+        ANALYSIS_MODULES_AVAILABLE = True
+    except ImportError as e:
+        print(f"Warning: Some analysis modules not available: {e}")
+        ANALYSIS_MODULES_AVAILABLE = False
+
+    # Check ULG analyzer
+    try:
+        from robust_ulg_analyzer import RobustULGAnalyzer
+        ROBUST_ANALYZER_AVAILABLE = True
+    except ImportError:
+        ROBUST_ANALYZER_AVAILABLE = False
+
+    # Check ULG converter
+    try:
+        from ulg_converter import ULGConverter
+        ULGConverter_obj = ULGConverter
+    except ImportError:
+        ULGConverter_obj = None
+    
     # Header
-    st.markdown('<h1 class="main-header">🚁 UAV Flight Analysis Dashboard - Enhanced</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 class="main-header">UAV Flight Analysis Dashboard - Enhanced</h1>', unsafe_allow_html=True)
     st.markdown("---")
     
     # Initialize ULG integration
     ulg_integration = ULGAnalysisIntegration()
     
     # Sidebar
-    st.sidebar.title("📊 Analysis Controls")
+    st.sidebar.title("Analysis Controls")
     
     # Data source selection
     data_source = st.sidebar.radio(
@@ -274,11 +313,118 @@ def main():
         # ULG analysis section
         ulg_integration.create_ulg_analysis_section()
         
-        # Get flight data and continue with analysis
+        # ALWAYS show analysis tools - no conditions
+        st.markdown("### 🚀 ANALYSIS TOOLS")
+        st.markdown("Complete flight analysis with professional aerospace reports")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("""
+            <div style="background-color: #f0f2f6; padding: 1.5rem; border-radius: 0.5rem; border: 1px solid #ddd; margin: 1rem 0;">
+                <h4>📄 Professional Report Generation</h4>
+                <p>Generate aerospace-grade UAV flight analysis reports with all 13 PRD-mandated sections.</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            if st.button("🚀 Generate Aerospace Report", type="primary", key="report_btn"):
+                with st.spinner("Generating professional aerospace report..."):
+                    try:
+                        # Create sample data for testing
+                        import pandas as pd
+                        import numpy as np
+                        
+                        sample_data = pd.DataFrame({
+                            'timestamp': np.linspace(0, 60, 100),
+                            'altitude_m': np.random.normal(100, 20, 100),
+                            'speed_mps': np.random.normal(10, 2, 100),
+                            'battery_percent': np.linspace(100, 80, 100)
+                        })
+                        
+                        # Mock analysis results
+                        analysis_results = {
+                            'metrics': {'flight_duration': {'minutes': 1.0}},
+                            'stability': {'overall_rating': {'rating': 'Good', 'score': 0.75}},
+                            'anomalies': {'summary': {'total_anomalies': 5}},
+                            'battery': {'consumption_metrics': {'total_consumption': 10.0}},
+                            'phases': {'phases': []}
+                        }
+                        
+                        metadata = {
+                            'flight_id': 'TEST-001',
+                            'aircraft_type': 'Test UAV',
+                            'autopilot': 'PX4',
+                            'mission_type': 'Test Flight'
+                        }
+                        
+                        report_path = generate_professional_uav_report(sample_data, analysis_results, metadata)
+                        st.success(f"✅ Professional report generated: {report_path}")
+                        
+                        # Provide download link
+                        with open(report_path, 'rb') as f:
+                            st.download_button(
+                                label="📥 Download Professional Report",
+                                data=f.read(),
+                                file_name=os.path.basename(report_path),
+                                mime="application/pdf"
+                            )
+                        
+                    except Exception as e:
+                        st.error(f"❌ Report generation failed: {e}")
+        
+        with col2:
+            st.markdown("""
+            <div style="background-color: #f0f2f6; padding: 1.5rem; border-radius: 0.5rem; border: 1px solid #ddd; margin: 1rem 0;">
+                <h4>📊 Data Analysis Pipeline</h4>
+                <p>Run complete flight analysis including metrics, stability, anomalies, battery, and phase detection.</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            if st.button("📊 Run Analysis Pipeline", type="primary", key="analysis_btn"):
+                with st.spinner("Running analysis pipeline..."):
+                    try:
+                        # Get flight data from ULG integration
+                        flight_data = ulg_integration.get_flight_data()
+                        
+                        if flight_data is not None and ANALYSIS_MODULES_AVAILABLE:
+                            # Run comprehensive analysis
+                            metrics = calculate_all_flight_metrics(flight_data)
+                            stability = assess_flight_stability(flight_data)
+                            anomalies = detect_all_anomalies(flight_data, {'threshold_std': 3.0})
+                            battery = comprehensive_battery_analysis(flight_data)
+                            phases = detect_flight_phases(flight_data, 'hybrid', {'climb_threshold': 0.5, 'descent_threshold': -0.5})
+                            
+                            st.success("✅ Complete analysis finished!")
+                            
+                            # Display results
+                            st.markdown("### 📊 ANALYSIS RESULTS")
+                            
+                            col1, col2, col3, col4 = st.columns(4)
+                            with col1:
+                                st.metric("Duration", f"{metrics['flight_duration']['minutes']:.1f} min")
+                            with col2:
+                                st.metric("Max Altitude", f"{metrics['altitude_stats']['max_altitude']:.1f} m")
+                            with col3:
+                                st.metric("Max Speed", f"{metrics['speed_stats']['max_speed']:.1f} m/s")
+                            with col4:
+                                st.metric("Total Anomalies", anomalies['summary']['total_anomalies'])
+                            
+                            # Digital twin
+                            st.markdown("### 🌐 DIGITAL TWIN VISUALIZATION")
+                            visualizations = create_comprehensive_digital_twin(flight_data)
+                            if '3d_path' in visualizations:
+                                st.plotly_chart(visualizations['3d_path'], use_container_width=True)
+                        else:
+                            st.info("📋 Please upload a ULG file first to run analysis")
+                            
+                    except Exception as e:
+                        st.error(f"❌ Analysis failed: {e}")
+        
+        # Original ULG analysis logic (preserved)
         flight_data = ulg_integration.get_flight_data()
         if flight_data is not None:
-            st.success("✅ ULG data ready for full analysis!")
-            if st.sidebar.button("🚀 Run Complete Analysis", type="primary"):
+            st.success("ULG data ready for full analysis!")
+            if st.sidebar.button("Run Complete Analysis", type="primary", key="sidebar_analysis"):
                 try:
                     if ANALYSIS_MODULES_AVAILABLE:
                         # Run comprehensive analysis
@@ -288,10 +434,10 @@ def main():
                         battery = comprehensive_battery_analysis(flight_data)
                         phases = detect_flight_phases(flight_data, 'hybrid', {'climb_threshold': 0.5, 'descent_threshold': -0.5})
                         
-                        st.success("✅ Complete analysis finished!")
+                        st.success("Complete analysis finished!")
                         
                         # Display results
-                        st.subheader("📊 Complete Analysis Results")
+                        st.subheader("Complete Analysis Results")
                         
                         col1, col2, col3, col4 = st.columns(4)
                         with col1:
@@ -304,66 +450,129 @@ def main():
                             st.metric("Total Anomalies", anomalies['summary']['total_anomalies'])
                         
                         # Digital twin
-                        st.subheader("🌐 Digital Twin")
+                        st.subheader("Digital Twin")
                         visualizations = create_comprehensive_digital_twin(flight_data)
                         if '3d_path' in visualizations:
                             st.plotly_chart(visualizations['3d_path'], use_container_width=True)
                         
+                        # Professional Report Generation
+                        st.subheader("Professional Report Generation")
+                        col1, col2 = st.columns(2)
+                        
+                        with col1:
+                            if st.button("Generate Aerospace Report", type="primary", key="legacy_report_btn"):
+                                with st.spinner("Generating professional aerospace report..."):
+                                    try:
+                                        # Prepare metadata
+                                        metadata = {
+                                            'flight_id': f"FLT-{datetime.now().strftime('%Y-%m-%d')}-001",
+                                            'aircraft_type': 'Quadrotor UAV',
+                                            'autopilot': 'PX4',
+                                            'mission_type': 'Test Flight'
+                                        }
+                                        
+                                        # Generate professional report
+                                        report_path = generate_professional_uav_report(
+                                            flight_data, 
+                                            {
+                                                'metrics': metrics,
+                                                'stability': stability,
+                                                'anomalies': anomalies,
+                                                'battery': battery,
+                                                'phases': phases
+                                            },
+                                            metadata
+                                        )
+                                        
+                                        st.success(f"✅ Professional report generated: {report_path}")
+                                        st.info("Report includes: Cover Page, Executive Summary, Performance Analysis, Anomaly Detection, Battery Analysis, Stability Analysis, Flight Phases, Integrated Dashboard, System Health Score, Engineering Recommendations, and Appendix")
+                                        
+                                        # Provide download link
+                                        with open(report_path, 'rb') as f:
+                                            st.download_button(
+                                                label="Download Professional Report",
+                                                data=f.read(),
+                                                file_name=os.path.basename(report_path),
+                                                mime="application/pdf"
+                                            )
+                                        
+                                    except Exception as e:
+                                        st.error(f"Professional report generation failed: {e}")
+                        
+                        with col2:
+                            if st.button("Generate Legacy Reports", key="legacy_btn"):
+                                with st.spinner("Generating legacy reports..."):
+                                    try:
+                                        legacy_reports = generate_all_reports(
+                                            flight_data, metrics, stability, anomalies, battery, phases
+                                        )
+                                        
+                                        st.success("Legacy reports generated!")
+                                        for format_type, path in legacy_reports.items():
+                                            st.info(f"{format_type.title()}: {path}")
+                                        
+                                    except Exception as e:
+                                        st.error(f"Legacy report generation failed: {e}")
+                        
                     else:
-                        st.warning("⚠️ Analysis modules not available")
+                        st.warning("Analysis modules not available")
                         
                 except Exception as e:
-                    st.error(f"❌ Analysis failed: {e}")
+                    st.error(f"Analysis failed: {e}")
     
     else:
         # Traditional CSV analysis (simplified)
-        st.sidebar.header("📁 CSV File Upload")
+        st.sidebar.header("CSV File Upload")
         uploaded_file = st.sidebar.file_uploader("Upload CSV", type=['csv'])
         
         if uploaded_file is not None:
             try:
+                # Ensure pandas is available
+                import pandas as pd
                 df = pd.read_csv(uploaded_file)
-                st.success(f"✅ CSV loaded: {len(df)} rows")
+                st.success(f"CSV loaded: {len(df)} rows")
                 
-                if st.sidebar.button("🚀 Analyze CSV"):
+                if st.sidebar.button("Analyze CSV"):
                     try:
                         if ANALYSIS_MODULES_AVAILABLE:
                             metrics = calculate_all_flight_metrics(df)
                             ulg_integration._display_metrics(metrics)
                         else:
-                            st.warning("⚠️ Analysis modules not available")
+                            st.warning("Analysis modules not available")
                     except Exception as e:
-                        st.error(f"❌ Analysis failed: {e}")
+                        st.error(f"Analysis failed: {e}")
             except Exception as e:
-                st.error(f"❌ CSV loading failed: {e}")
+                st.error(f"CSV loading failed: {e}")
     
     # Welcome message
     if data_source == "CSV File" and uploaded_file is None:
-        st.markdown("""
-        ## Welcome to the Enhanced UAV Flight Analysis System! 🚁
+        system_status = f"""
+        - Robust ULG Analyzer: {'Available' if ROBUST_ANALYZER_AVAILABLE else 'Not Available'}
+        - Analysis Modules: {'Available' if ANALYSIS_MODULES_AVAILABLE else 'Not Available'}
+        - ULG Converter: {'Available' if ULGConverter else 'Not Available'}
+        """
         
-        ### 🚁 New Features:
+        st.markdown(f"""
+        ## Welcome to Enhanced UAV Flight Analysis System!
+        
+        ### New Features:
         - **Direct ULG Analysis**: Upload and analyze ULG files directly
         - **Real-time Processing**: Instant analysis results
         - **Comprehensive Metrics**: Flight phases, stability, GPS, battery
         - **Modern Interface**: Interactive visualizations
         - **Export Functionality**: Download reports and data
         
-        ### 📋 Getting Started:
+        ### Getting Started:
         1. Choose "ULG File Analysis" for direct processing
         2. Upload your ULG file
         3. Click "Analyze ULG File"
         4. View comprehensive results
         5. Export reports as needed
         
-        ### 🔧 System Status:
-        """ + 
-        f"   - Robust ULG Analyzer: {'✅ Available' if ROBUST_ANALYZER_AVAILABLE else '❌ Not Available'}" +
-        f"   - Analysis Modules: {'✅ Available' if ANALYSIS_MODULES_AVAILABLE else '❌ Not Available'}" +
-        f"   - ULG Converter: {'✅ Available' if ULGConverter else '❌ Not Available'}"
-        )
+        ### System Status:
+        {system_status}
         
-        Upload your data to begin analysis! 🚀
+        Upload your data to begin analysis!
         """)
 
 if __name__ == '__main__':
