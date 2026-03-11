@@ -35,6 +35,7 @@ try:
     from visualization import create_comprehensive_flight_plots
     from report_generator import generate_all_reports
     from pdf_report_generator import PDFReportGenerator
+    from professional_report_generator import ProfessionalReportGenerator, generate_professional_uav_report
     ANALYSIS_MODULES_AVAILABLE = True
 except ImportError as e:
     print(f"Warning: Some analysis modules not available: {e}")
@@ -131,6 +132,8 @@ class ComprehensiveAnalyzer:
         self.analysis_results = {}
         self.flight_data = None
         self.pdf_generator = PDFReportGenerator() if ANALYSIS_MODULES_AVAILABLE else None
+        self.professional_report_generator_class = ProfessionalReportGenerator if ANALYSIS_MODULES_AVAILABLE else None
+        self.professional_report_generator = generate_professional_uav_report if ANALYSIS_MODULES_AVAILABLE else None
         
     def create_main_interface(self):
         """Create the main interactive interface"""
@@ -218,10 +221,10 @@ class ComprehensiveAnalyzer:
             try:
                 with st.spinner("📊 Loading CSV data..."):
                     self.flight_data = pd.read_csv(uploaded_file)
-                    st.sidebar.success(f"✅ Loaded {len(self.flight_data)} records")
+                    st.sidebar.success(f"Loaded {len(self.flight_data)} records")
                     self._validate_and_preprocess_data()
             except Exception as e:
-                st.sidebar.error(f"❌ Error loading CSV: {e}")
+                st.sidebar.error(f"Error loading CSV: {e}")
     
     def _handle_ulg_upload(self):
         """Handle ULG file upload and analysis"""
@@ -246,15 +249,15 @@ class ComprehensiveAnalyzer:
                         if self.robust_analyzer:
                             self.analysis_results['ulg'] = self.robust_analyzer.analyze_ulg_file(tmp_ulg_path)
                             self._create_flight_data_from_ulg()
-                            st.sidebar.success("✅ ULG analysis completed!")
+                            st.sidebar.success("ULG analysis completed!")
                         else:
-                            st.sidebar.error("❌ ULG analyzer not available")
+                            st.sidebar.error("ULG analyzer not available")
                         
                         # Clean up
                         os.unlink(tmp_ulg_path)
                         
                     except Exception as e:
-                        st.sidebar.error(f"❌ ULG analysis failed: {e}")
+                        st.sidebar.error("ULG analysis failed: {e}")
     
     def _generate_sample_data(self):
         """Generate sample flight data for demonstration"""
@@ -272,7 +275,7 @@ class ComprehensiveAnalyzer:
                     'gps_lat': [37.7749 + np.sin(i*0.001) * 0.02 + np.random.normal(0, 0.0001) for i in range(num_points)],
                     'gps_lon': [-122.4194 + np.cos(i*0.001) * 0.02 + np.random.normal(0, 0.0001) for i in range(num_points)]
                 })
-                st.sidebar.success(f"✅ Generated {len(self.flight_data)} sample records")
+                st.sidebar.success(f"Generated {len(self.flight_data)} sample records")
     
     def _create_flight_data_from_ulg(self):
         """Create flight data from ULG analysis results"""
@@ -324,10 +327,10 @@ class ComprehensiveAnalyzer:
     
     def _create_analysis_tabs(self):
         """Create tabbed interface for different analysis tools"""
-        tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
+        tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs([
             "📊 Overview", "🎯 Flight Metrics", "🔍 Anomaly Detection", 
             "🔋 Battery Analysis", "⚖️ Stability Analysis", "🚁 Flight Phases",
-            "🌐 Digital Twin", "📈 Visualizations"
+            "🌐 Digital Twin", "📈 Visualizations", "🚀 Professional Reports"
         ])
         
         with tab1:
@@ -353,6 +356,9 @@ class ComprehensiveAnalyzer:
         
         with tab8:
             self._create_visualizations_tab()
+        
+        with tab9:
+            self._create_professional_reports_tab()
     
     def _create_overview_tab(self):
         """Create overview tab with summary information"""
@@ -1262,7 +1268,7 @@ class ComprehensiveAnalyzer:
             'basic_analysis': True
         }
         
-        st.success("✅ Basic analysis completed!")
+        st.success("Basic analysis completed!")
         
         # Show basic summary
         st.subheader("📊 Basic Analysis Summary")
@@ -1301,7 +1307,7 @@ class ComprehensiveAnalyzer:
                     
                     self.analysis_results['phases'] = detect_flight_phases(self.flight_data, method=self.phase_method, config=config)
                     
-                    st.success("✅ Comprehensive analysis completed!")
+                    st.success("Comprehensive analysis completed!")
                     st.info("📊 Check individual tabs for detailed results")
                 else:
                     st.warning("⚠️ Analysis modules not available")
@@ -1436,28 +1442,161 @@ class ComprehensiveAnalyzer:
                 st.info("💡 Note: PDF generation requires matplotlib, seaborn, and reportlab packages.")
                 st.info("🔧 Try running: pip install reportlab matplotlib seaborn")
     
-    def _export_processed_data(self):
-        """Export processed flight data"""
-        if self.flight_data is None:
-            st.warning("⚠️ No data available to export")
+    def _generate_professional_aerospace_report(self):
+        """Generate professional aerospace-grade UAV flight analysis report"""
+        if self.flight_data is None or len(self.flight_data) == 0:
+            st.warning("⚠️ No flight data available. Load data first.")
             return
         
-        try:
-            # Convert to CSV
-            csv_data = self.flight_data.to_csv(index=False)
+        # Auto-run analysis if no results exist
+        if not self.analysis_results:
+            st.info("🔍 No analysis results found. Running analysis automatically...")
+            self._run_comprehensive_analysis()
             
-            # Provide download
-            st.download_button(
-                label="📥 Download Processed Data (CSV)",
-                data=csv_data,
-                file_name=f"processed_flight_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-                mime="text/csv"
-            )
+            if not self.analysis_results:
+                st.error("❌ Analysis failed. Cannot generate professional report.")
+                return
+        
+        if not self.professional_report_generator_class and not self.professional_report_generator:
+            st.warning("⚠️ Professional report generator not available. Required modules may be missing.")
+            return
+        
+        with st.spinner("🚀 Generating professional aerospace report..."):
+            try:
+                # Prepare metadata
+                metadata = {
+                    'flight_id': f"FLT-{datetime.now().strftime('%Y-%m-%d')}-001",
+                    'aircraft_type': 'Quadrotor UAV',
+                    'autopilot': 'PX4',
+                    'mission_type': 'Professional Analysis Flight',
+                    'firmware_version': '1.12.3',
+                    'analyst': 'UAV Flight Analysis System',
+                    'report_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                }
+                
+                # Generate professional report using updated generator
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                report_filename = f"UAV_Professional_Aerospace_Report_{timestamp}.pdf"
+                
+                # Try using the class-based generator first
+                if self.professional_report_generator_class:
+                    generator = self.professional_report_generator_class()
+                    report_path = generator.generate_comprehensive_professional_report(
+                        self.flight_data,
+                        self.analysis_results,
+                        metadata,
+                        report_filename
+                    )
+                else:
+                    # Fallback to function-based generator
+                    report_path = self.professional_report_generator(
+                        self.flight_data,
+                        self.analysis_results,
+                        metadata
+                    )
+                
+                # Read PDF file for download
+                with open(report_path, 'rb') as f:
+                    pdf_data = f.read()
+                
+                # Display success message with report details
+                st.success("✅ Professional Aerospace Report Generated Successfully!")
+                st.info(f"📄 Report saved as: {report_filename}")
+                st.info(f"📊 File size: {os.path.getsize(report_path):,} bytes")
+                
+                # Report sections information
+                st.markdown("""
+                ### 📋 **Enhanced Report Features:**
+                1. **Cover Page** - Professional flight metadata and specifications
+                2. **Executive Mission Summary** - One-page engineering overview
+                3. **Flight Data Overview** - Parameter descriptions and statistics
+                4. **Mission Performance Analysis** - Altitude, speed, and navigation metrics
+                5. **Coverage/Navigation Analysis** - GPS and waypoint analysis
+                6. **Anomaly Detection Analysis** - Statistical outlier identification
+                7. **Battery Performance Analysis** - Consumption and efficiency metrics
+                8. **Flight Stability Analysis** - Attitude control assessment
+                9. **Flight Phase Segmentation** - Flight segment identification
+                10. **Integrated Dashboard** - 2x2 key parameter overview
+                11. **System Health Score** - Composite flight quality scoring
+                12. **Engineering Recommendations** - Structured improvement suggestions
+                13. **Appendix** - Technical specifications and algorithms
+                
+                **✨ Enhanced Features:**
+                - Aerospace-grade documentation standards
+                - Engineering narrative interpretations
+                - Dual visualization rule compliance
+                - Composite flight quality scoring
+                - Structured recommendations
+                - Professional formatting and styling
+                """)
+                
+                # Provide download button
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.download_button(
+                        label="🚀 Download Professional Aerospace Report",
+                        data=pdf_data,
+                        file_name=report_filename,
+                        mime="application/pdf",
+                        help="Download: complete 13-section aerospace-grade UAV flight analysis report"
+                    )
+                
+                with col2:
+                    st.info("""
+                    📋 **Enhanced Report Features:**
+                    - Aerospace-grade documentation
+                    - Engineering narrative interpretations
+                    - Dual visualization rule compliance
+                    - Composite flight quality scoring
+                    - Structured recommendations
+                    - Professional formatting
+                    - Updated PDF generation engine
+                    """)
+                
+                # Clean up
+                try:
+                    os.unlink(report_path)
+                except:
+                    pass
+                
+            except Exception as e:
+                st.error(f"❌ Professional report generation failed: {e}")
+                st.info("💡 Note: Professional report generation requires: professional_report_generator module.")
+                st.info("🔧 Ensure all dependencies are installed: pip install reportlab matplotlib seaborn")
+    
+    def _export_processed_data(self):
+        """Export processed data"""
+        if self.flight_data is None or len(self.flight_data) == 0:
+            st.warning("⚠️ No flight data available. Load data first.")
+            return
+        
+        # Auto-run analysis if no results exist
+        if not self.analysis_results:
+            st.info("🔍 No analysis results found. Running analysis automatically...")
+            self._run_comprehensive_analysis()
             
-            st.success("✅ Data export ready!")
-            
-        except Exception as e:
-            st.error(f"❌ Data export failed: {e}")
+            if not self.analysis_results:
+                st.error("❌ Analysis failed. Cannot export data.")
+                return
+        
+        with st.spinner("📊 Exporting processed data..."):
+            try:
+                # Prepare data for export
+                csv_data = self.flight_data.to_csv(index=False)
+                
+                # Provide download button
+                st.download_button(
+                    label="📥 Download Processed Data (CSV)",
+                    data=csv_data,
+                    file_name=f"processed_flight_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                    mime="text/csv"
+                )
+                
+                st.success("✅ Data export ready!")
+                
+            except Exception as e:
+                st.error(f"❌ Data export failed: {e}")
     
     def _create_welcome_section(self):
         """Create welcome section for new users"""
@@ -1491,19 +1630,74 @@ class ComprehensiveAnalyzer:
         ### 🚀 **Getting Started:**
         
         1. **Choose Data Source** from the sidebar (CSV, ULG, or Sample Data)
-        2. **Configure Analysis** settings in the sidebar
-        3. **Run Analysis** using Quick or Comprehensive mode
-        4. **Explore Results** in different analysis tabs
-        5. **Export Reports** as needed
+        2. **Configure Analysis** settings in sidebar
+        3. **Explore Analysis Tabs** for detailed insights
+        4. **Generate Professional Reports** from the dedicated tab
+        """)
+    
+    def _create_professional_reports_tab(self):
+        """Create professional reports tab with aerospace-grade report generation"""
+        st.subheader("🚀 Professional Aerospace Reports")
         
-        ### 📊 **System Status:**
-        """ + 
-        f"""
-        - ✅ Analysis Modules: {'Available' if ANALYSIS_MODULES_AVAILABLE else 'Not Available'}
-        - ✅ ULG Analyzer: {'Available' if ROBUST_ANALYZER_AVAILABLE else 'Not Available'}
-        - ✅ ULG Converter: {'Available' if ULGConverter else 'Not Available'}
-        """
-        )
+        # Module status display
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric("PDF Generator", "✅ Available" if self.pdf_generator else "❌ Unavailable")
+        with col2:
+            st.metric("Professional Generator", "✅ Available" if (self.professional_report_generator_class or self.professional_report_generator) else "❌ Unavailable")
+        with col3:
+            st.metric("Analysis Modules", "✅ Available" if ANALYSIS_MODULES_AVAILABLE else "❌ Unavailable")
+        with col4:
+            st.metric("ULG Analyzer", "✅ Available" if ROBUST_ANALYZER_AVAILABLE else "❌ Unavailable")
+        
+        st.markdown("---")
+        
+        # Report generation options
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("### 📄 Standard PDF Report")
+            st.write("Comprehensive flight analysis with charts and metrics")
+            if st.button("📊 Generate Standard PDF Report", type="primary"):
+                self._generate_pdf_report()
+        
+        with col2:
+            st.markdown("### 🚀 Professional Aerospace Report")
+            st.write("Aerospace-grade 13-section engineering documentation")
+            if st.button("🚀 Generate Professional Report", type="primary"):
+                self._generate_professional_aerospace_report()
+        
+        st.markdown("---")
+        
+        # Enhanced features information
+        st.markdown("""
+        ### ✨ **Enhanced PDF Module Features:**
+        
+        #### **📄 Standard PDF Report:**
+        - Flight metrics and performance analysis
+        - Battery consumption charts
+        - Stability analysis visualizations
+        - Anomaly detection results
+        - Flight phase segmentation
+        - Interactive dashboard summary
+        
+        #### **🚀 Professional Aerospace Report:**
+        - **13 PRD-Mandated Sections** with aerospace standards
+        - **Dual Visualization Rule** compliance (Metric → Visualization → Interpretation)
+        - **Engineering Narrative** interpretations for each analysis
+        - **Composite Flight Quality** scoring system
+        - **Structured Recommendations** (Maintenance, Control, Energy, Mission)
+        - **Professional Formatting** with aerospace documentation standards
+        - **Enhanced PDF Generation** engine with improved styling
+        
+        #### **🔧 Technical Improvements:**
+        - Updated PDF generation engine
+        - Enhanced error handling and fallback mechanisms
+        - Both class-based and function-based generator support
+        - Improved metadata handling
+        - Better file management and cleanup
+        """)
         
         st.info("🎯 **Upload your flight data or generate sample data to begin comprehensive analysis!**")
 
