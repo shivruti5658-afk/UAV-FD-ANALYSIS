@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "name": "uav-flight-analysis",
+  "builds": [
+    {
+      "src": "dashboard/comprehensive_interactive_dashboard.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "dashboard/comprehensive_interactive_dashboard.py"
+    }
+  ],
+  "env": {
+    "PYTHON_VERSION": "3.9"
+  },
+  "functions": {
+    "dashboard/comprehensive_interactive_dashboard.py": {
+      "runtime": "python3.9"
+    }
+  },
+  "installCommand": "pip install -r requirements_pdf.txt",
+  "framework": "streamlit",
+  "outputDirectory": "outputs"
+}
